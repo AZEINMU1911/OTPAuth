@@ -10,5 +10,7 @@ route.post('/request-otp', AuthController.requestOtp);
 route.post('/verify-otp', AuthController.verifyOtp);
 route.post('/register', AuthController.register);
 route.post('/login', AuthController.login);
+route.post('/login-otp/request', AuthController.requestLoginOtp);
+route.post('/login-otp/verify', AuthController.verifyLoginOtp);
 
 module.exports = route;

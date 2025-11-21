@@ -216,6 +216,129 @@ class AuthController {
             next(error);
         }
     }
+
+    static async requestLoginOtp(req, res, next) {
+        try {
+            const { email } = req.body || {};
+
+            if (!email) {
+                return res.status(400).json({ message: 'Email is required' });
+            }
+
+            const normalizedEmail = email.toLowerCase().trim();
+
+            const user = await User.findOne({
+                where: { email: normalizedEmail, isVerified: true },
+            });
+
+            if (!user) {
+                return res.status(400).json({ message: 'Cannot send OTP for this email' });
+            }
+
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const expiresAt = new Date(Date.now() + 3 * 60 * 1000); // 3min
+
+            const [record, created] = await EmailVerification.findOrCreate({
+                where: { email: normalizedEmail },
+                defaults: {
+                    otp,
+                    otpExpiresAt: expiresAt,
+                    used: false,
+                },
+            });
+
+            if (!created) {
+                record.otp = otp;
+                record.otpExpiresAt = expiresAt;
+                record.used = false;
+                await record.save();
+            }
+
+            try {
+                await sendOtpEmail(normalizedEmail, otp);
+                console.log(`Login OTP for ${normalizedEmail} sent via email`);
+            } catch (mailErr) {
+                console.error('Failed to send login OTP email:', mailErr);
+                return res.status(500).json({ message: 'Failed to send OTP email' });
+            }
+
+            return res.status(200).json({ message: `Login OTP sent to ${normalizedEmail}` });
+        } catch (error) {
+            console.error('Error in requestLoginOtp:', error);
+            next(error);
+        }
+    }
+
+
+    static async verifyLoginOtp(req, res, next) {
+        try {
+            const { email, otp } = req.body || {};
+
+            if (!email || !otp) {
+                return res.status(400).json({ message: 'Email and OTP are required' });
+            }
+
+            const normalizedEmail = email.toLowerCase().trim();
+
+            const record = await EmailVerification.findOne({
+                where: { email: normalizedEmail },
+            });
+
+            if (!record) {
+                return res.status(400).json({ message: 'Invalid email or OTP' });
+            }
+
+            if (record.used) {
+                return res.status(400).json({ message: 'OTP already used, request a new one' });
+            }
+
+            const now = new Date();
+            if (record.otpExpiresAt <= now) {
+                return res.status(400).json({ message: 'OTP has expired, request a new one' });
+            }
+
+            if (record.otp !== otp) {
+                return res.status(400).json({ message: 'Invalid email or OTP' });
+            }
+
+            record.used = true;
+            await record.save();
+
+            const user = await User.findOne({
+                where: { email: normalizedEmail, isVerified: true },
+            });
+
+            if (!user) {
+                return res.status(400).json({ message: 'No verified user for this email' });
+            }
+
+            const payload = {
+                userId: user.id,
+                email: user.email,
+            };
+
+            const accessToken = jwt.sign(
+                payload,
+                process.env.ACCESS_TOKEN_SECRET,
+                {
+                    expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || '1d',
+                }
+            );
+
+            return res.status(200).json({
+                message: 'Login via OTP successful',
+                accessToken,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                },
+            });
+        } catch (error) {
+            console.error('Error in verifyLoginOtp:', error);
+            next(error);
+        }
+    }
+
 }
 
 module.exports = { AuthController };
