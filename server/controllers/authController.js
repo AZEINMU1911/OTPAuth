@@ -3,6 +3,7 @@ const { User, EmailVerification } = require('../models');
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { sendOtpEmail } = require('../utils/mailer');
 
 class AuthController {
     static async testAuth(req, res) {
@@ -48,6 +49,14 @@ class AuthController {
                 record.otpExpiresAt = expiresAt;
                 record.used = false;
                 await record.save();
+            }
+
+            try {
+                await sendOtpEmail(normalizedEmail, otp);
+                console.log(`OTP for ${normalizedEmail} sent via email`);
+            } catch (mailErr) {
+                console.error('Failed to send OTP email:', mailErr);
+                return res.status(500).json({ message: 'Failed to send OTP email' });
             }
 
             console.log(`OTP for ${normalizedEmail}: ${otp}`);
@@ -190,7 +199,7 @@ class AuthController {
             if (!user || !isMatch) {
                 return res.status(400).json({ message: 'Invalid email or password' });
             }
-            
+
             const payload = {
                 id: user.id,
                 email: user.email,
