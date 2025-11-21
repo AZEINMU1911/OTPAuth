@@ -15,8 +15,6 @@ route.post('/login-otp/request', AuthController.requestLoginOtp);
 route.post('/login-otp/verify', AuthController.verifyLoginOtp);
 
 //Protected route
-route.get('/me', protect, (req, res) => {
-    res.json({ message: `Hello, your user ID is ${req.user.id} and email is ${req.user.email}` });
-});
+route.get('/me', protect, UserController.me);
 
 module.exports = route;

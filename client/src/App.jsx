@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import VerifyOtp from "./pages/VerifyOtp";
 import LoginOtp from "./pages/LoginOtp";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
 import { useAuth } from "./context/AuthContext";
 
 export default function App() {
@@ -61,10 +62,38 @@ export default function App() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         <Routes>
           <Route path="/" element={<p>Welcome. Pick a flow above.</p>} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-otp" element={<VerifyOtp />} />
-          <Route path="/login-otp" element={<LoginOtp />} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/verify-otp"
+            element={
+              <PublicRoute>
+                <VerifyOtp />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/login-otp"
+            element={
+              <PublicRoute>
+                <LoginOtp />
+              </PublicRoute>
+            }
+          />
           <Route
             path="/dashboard"
             element={
