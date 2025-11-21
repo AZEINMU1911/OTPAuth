@@ -71,6 +71,7 @@ class AuthController {
         }
     }
 
+    //Return token
     static async verifyOtp(req, res, next) {
         try {
             const { email, otp } = req.body || {};
@@ -116,10 +117,13 @@ class AuthController {
             const emailVerifiedToken = jwt.sign(payload, secret, { expiresIn });
             console.log(`Email verified token for ${normalizedEmail}: ${emailVerifiedToken}`);
 
-            return res.status(200).json({
-                message: 'OTP verified successfully',
-                emailVerifiedToken,
-            });
+            return res
+                .status(200)
+                .json({
+                    message: 'OTP verified successfully',
+                    emailVerifiedToken,
+                })
+                .setHeader("X-Email-Verified-Token", emailVerifiedToken);
         } catch (error) {
             console.error('Error in verifyOtp:', error);
             next(error);
@@ -184,6 +188,7 @@ class AuthController {
         }
     }
 
+    //Return token
     static async login(req, res, next) {
         try {
             const { email, password } = req.body || {};
@@ -206,10 +211,13 @@ class AuthController {
             };
             const token = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || '1d' });
 
-            return res.status(200).json({
-                message: 'Login successful',
-                accessToken: token,
-            });
+            return res
+                .status(200)
+                .json({
+                    message: 'Login successful',
+                    accessToken: token,
+                })
+                .setHeader('Authorization', `Bearer ${token}`);
 
         } catch (error) {
             console.error('Error in login:', error);
@@ -269,7 +277,7 @@ class AuthController {
         }
     }
 
-
+    //Return token
     static async verifyLoginOtp(req, res, next) {
         try {
             const { email, otp } = req.body || {};
@@ -325,14 +333,17 @@ class AuthController {
                 }
             );
 
-            return res.status(200).json({
+            return res
+            .status(200)
+            .json({
                 message: 'Login via OTP successful',
                 accessToken,
                 user: {
                     id: user.id,
                     email: user.email,
                 },
-            });
+            })
+            .setHeader('Authorization', `Bearer ${accessToken}`);
         } catch (error) {
             console.error('Error in verifyLoginOtp:', error);
             next(error);
